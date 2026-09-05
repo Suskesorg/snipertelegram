@@ -1,0 +1,20 @@
+# Rahasia - JANGAN PERNAH masuk git
+.env
+*.session
+*.session-journal
+
+# Database & log
+data/
+logs/
+*.db
+*.db-wal
+*.db-shm
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/

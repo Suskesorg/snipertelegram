@@ -1,0 +1,7 @@
+# Paket yang dibutuhkan bot. Install dengan:  pip install -r requirements.txt
+python-dotenv>=1.0,<2        # membaca file .env
+web3>=7.0,<8                 # bicara dengan blockchain BSC
+eth-account>=0.13,<1         # tanda tangan transaksi
+telethon>=1.36,<2            # PENDENGAR: baca channel Telegram pakai akun pribadi
+python-telegram-bot>=21.0,<23  # KONTROL MANUAL: bot pribadi dari BotFather
+aiohttp>=3.9,<4              # koneksi HTTP async ke RPC
