@@ -36,7 +36,8 @@ snipertelegram/
 │   ├── db.py             <- database SQLite
 │   └── logging_setup.py  <- logging + sensor private key
 ├── scripts/
-│   └── m1_check.py       <- pemeriksaan tahap M1
+│   ├── m1_check.py       <- pemeriksaan tahap M1 (tidak butuh internet)
+│   └── cek_jaringan.py   <- cek RPC, gas price, & verifikasi alamat kontrak
 ├── data/sniper.db        <- database (dibuat otomatis)
 └── logs/sniper.log       <- catatan kegiatan bot
 ```
@@ -76,6 +77,38 @@ python3 scripts/m1_check.py
 Kalau ada yang kurang, skrip ini akan menyebut **nama baris di `.env`**
 yang harus Anda perbaiki. Kalau semua beres, di baris terakhir muncul
 `M1 SELESAI`.
+
+---
+
+## Memverifikasi alamat kontrak sendiri
+
+**Penting:** lingkungan kerja tempat kode ini ditulis diblokir dari semua
+RPC blockchain, dari `bscscan.com`, dan dari
+`developer.pancakeswap.finance`. Jadi alamat kontrak di `.env.example`
+belum pernah diadu langsung dengan blockchain oleh saya.
+
+Skrip berikut yang melakukannya, dan Anda menjalankannya di komputer atau
+VPS Anda sendiri yang punya akses internet penuh:
+
+```bash
+source .venv/bin/activate
+python3 scripts/cek_jaringan.py
+```
+
+Skrip ini bertanya langsung ke blockchain:
+
+- `router.factory()` harus sama persis dengan `PANCAKE_FACTORY_ADDRESS`
+- `router.WETH()` harus sama persis dengan `WBNB_ADDRESS`
+- token di `WBNB_ADDRESS` harus bernama `WBNB` dan berdesimal 18
+- ketiga alamat harus benar-benar berisi kode kontrak
+
+Kalau ketiganya cocok, alamatnya terbukti benar dari sumber yang paling
+tidak bisa berbohong, yaitu blockchain itu sendiri.
+
+Skrip ini juga melaporkan **gas price yang sedang berlaku**, supaya Anda
+bisa memilih `MAX_GAS_PRICE_GWEI` berdasarkan angka nyata.
+
+Skrip ini hanya membaca. Tidak mengirim transaksi, tidak butuh private key.
 
 ---
 
