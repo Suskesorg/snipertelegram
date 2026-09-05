@@ -285,6 +285,46 @@ class Config:
         ]
 
 
+@dataclass(frozen=True)
+class NetworkConfig:
+    """Bagian konfigurasi yang tidak menyangkut uang sama sekali.
+
+    Dipakai oleh scripts/cek_jaringan.py, supaya skrip itu bisa jalan
+    SEBELUM Anda mengisi angka-angka uang. Kalau tidak begini, ada
+    lingkaran setan: MAX_GAS_PRICE_GWEI baru bisa Anda tentukan setelah
+    tahu gas price sekarang, tapi skrip pengukurnya menolak jalan karena
+    MAX_GAS_PRICE_GWEI belum diisi.
+    """
+    chain_id: int
+    rpc_read_url: str
+    rpc_private_url: str
+    router_address: str
+    factory_address: str
+    wbnb_address: str
+
+
+def load_network_config(env_path: Path | None = None) -> NetworkConfig:
+    """Baca HANYA bagian jaringan dan alamat kontrak dari .env."""
+    path = env_path or ENV_PATH
+    if not path.exists():
+        raise ConfigError(
+            f"File .env tidak ditemukan di {path}\n"
+            f"    Jalankan dulu:  cp .env.example .env"
+        )
+    load_dotenv(path, override=True)
+    chain_id = _require_int("CHAIN_ID", "56 untuk BNB Smart Chain", minimum=1)
+    if chain_id != 56:
+        raise ConfigError(f"CHAIN_ID harus 56 (BNB Smart Chain), bukan {chain_id}.")
+    return NetworkConfig(
+        chain_id=chain_id,
+        rpc_read_url=_require_str("RPC_READ_URL", "alamat RPC biasa untuk membaca data blockchain"),
+        rpc_private_url=_require_str("RPC_PRIVATE_URL", "RPC privat anti-sandwich untuk mengirim transaksi"),
+        router_address=_require_address("PANCAKE_ROUTER_ADDRESS", "alamat Router v2 PancakeSwap"),
+        factory_address=_require_address("PANCAKE_FACTORY_ADDRESS", "alamat Factory v2 PancakeSwap"),
+        wbnb_address=_require_address("WBNB_ADDRESS", "alamat token WBNB"),
+    )
+
+
 def load_config(env_path: Path | None = None) -> Config:
     """Baca .env dan kembalikan Config yang sudah diperiksa."""
     path = env_path or ENV_PATH

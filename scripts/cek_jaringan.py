@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from web3 import Web3  # noqa: E402
 
-from sniper.config import ConfigError, load_config  # noqa: E402
+from sniper.config import ConfigError, load_config, load_network_config  # noqa: E402
 
 ROUTER_ABI = [
     {"inputs": [], "name": "factory",
@@ -58,18 +58,30 @@ def main() -> int:
     print(" CEK JARINGAN & VERIFIKASI ALAMAT KONTRAK")
     print("=" * 62)
 
+    # Skrip ini sengaja bisa jalan dengan .env yang belum lengkap, karena
+    # justru dia yang memberi tahu Anda angka gas price untuk mengisi
+    # MAX_GAS_PRICE_GWEI. Bagian jaringan wajib ada; bagian uang opsional.
+    try:
+        net = load_network_config()
+    except ConfigError as exc:
+        print("\n[GAGAL] Bagian jaringan di .env belum benar:\n")
+        print("  " + str(exc).replace("\n", "\n  "))
+        return 1
+
+    cfg = None
     try:
         cfg = load_config()
     except ConfigError as exc:
-        print("\n[GAGAL] Konfigurasi belum benar:\n")
-        print("  " + str(exc).replace("\n", "\n  "))
-        return 1
+        print("\n  Catatan: angka-angka uang di .env belum lengkap, jadi")
+        print("  pengecekan yang berkaitan dengan uang dilewati.")
+        print(f"  ({str(exc).splitlines()[0]})")
+        print("  Bagian jaringan dan verifikasi alamat kontrak tetap dijalankan.")
 
     problems = 0
 
     # ---- 1. sambungan RPC baca ----
-    print(f"\n-- Sambungan ke RPC baca --\n   {cfg.rpc_read_url}")
-    w3 = Web3(Web3.HTTPProvider(cfg.rpc_read_url, request_kwargs={"timeout": 15}))
+    print(f"\n-- Sambungan ke RPC baca --\n   {net.rpc_read_url}")
+    w3 = Web3(Web3.HTTPProvider(net.rpc_read_url, request_kwargs={"timeout": 15}))
     try:
         started = time.perf_counter()
         chain_id = w3.eth.chain_id
@@ -92,31 +104,40 @@ def main() -> int:
     print("\n-- Gas price yang sedang berlaku --")
     gas_wei = w3.eth.gas_price
     gas_gwei = Decimal(gas_wei) / Decimal(10) ** 9
-    print(f"{OK} Sekarang: {gas_gwei:.3f} gwei")
-    print(f"         Batas Anda di .env (MAX_GAS_PRICE_GWEI): {cfg.max_gas_price_gwei} gwei")
-    if cfg.max_gas_price_gwei < gas_gwei:
-        print(f"{BAD} Batas Anda LEBIH RENDAH dari gas saat ini. Semua transaksi")
-        print("         akan ditolak sendiri oleh bot. Naikkan MAX_GAS_PRICE_GWEI.")
-        problems += 1
-    else:
-        kelipatan = cfg.max_gas_price_gwei / gas_gwei if gas_gwei > 0 else Decimal(0)
-        print(f"{OK} Batas Anda = {kelipatan:.1f}x gas saat ini. "
-              f"Itu ruang untuk menaikkan gas saat percobaan ulang.")
+    print(f"{OK} Gas price sekarang: {gas_gwei:.3f} gwei")
+    print()
+    print("         >> INI ANGKA YANG ANDA BUTUHKAN. <<")
+    print("         Isi MAX_GAS_PRICE_GWEI di .env dengan angka yang lebih")
+    print("         TINGGI dari ini, karena percobaan ulang menaikkan gas.")
+    print("         Kalau batasnya di bawah gas yang berlaku, bot menolak")
+    print("         semua transaksinya sendiri, termasuk penjualan.")
+    print()
+
+    if cfg is not None:
+        print(f"         Batas Anda di .env (MAX_GAS_PRICE_GWEI): {cfg.max_gas_price_gwei} gwei")
+        if cfg.max_gas_price_gwei < gas_gwei:
+            print(f"{BAD} Batas Anda LEBIH RENDAH dari gas saat ini. Semua transaksi")
+            print("         akan ditolak sendiri oleh bot. Naikkan MAX_GAS_PRICE_GWEI.")
+            problems += 1
+        else:
+            kelipatan = cfg.max_gas_price_gwei / gas_gwei if gas_gwei > 0 else Decimal(0)
+            print(f"{OK} Batas Anda = {kelipatan:.1f}x gas saat ini. "
+                  f"Itu ruang untuk menaikkan gas saat percobaan ulang.")
 
     # perkiraan ongkos satu penjualan, pakai gas yang berlaku sekarang
     perkiraan_gas_unit = 400_000  # swap dengan token berpajak, angka kasar
     ongkos = Decimal(gas_wei) * perkiraan_gas_unit / Decimal(10) ** 18
     print(f"         Perkiraan ongkos 1x jual (~{perkiraan_gas_unit:,} gas): {ongkos:.6f} BNB")
-    if cfg.gas_reserve_bnb > 0 and ongkos > 0:
+    if cfg is not None and cfg.gas_reserve_bnb > 0 and ongkos > 0:
         print(f"         Cadangan gas {cfg.gas_reserve_bnb} BNB cukup untuk "
               f"kira-kira {int(cfg.gas_reserve_bnb / ongkos)} kali jual.")
 
     # ---- 3. verifikasi kontrak ----
     print("\n-- Verifikasi alamat kontrak langsung ke blockchain --")
 
-    for nama, alamat in (("Router", cfg.router_address),
-                         ("Factory", cfg.factory_address),
-                         ("WBNB", cfg.wbnb_address)):
+    for nama, alamat in (("Router", net.router_address),
+                         ("Factory", net.factory_address),
+                         ("WBNB", net.wbnb_address)):
         code = w3.eth.get_code(alamat)
         if len(code) > 2:
             print(f"{OK} {nama:8s} {alamat} berisi kode kontrak ({len(code):,} byte)")
@@ -124,7 +145,7 @@ def main() -> int:
             print(f"{BAD} {nama:8s} {alamat} KOSONG, tidak ada kontrak di situ.")
             problems += 1
 
-    router = w3.eth.contract(address=cfg.router_address, abi=ROUTER_ABI)
+    router = w3.eth.contract(address=net.router_address, abi=ROUTER_ABI)
     try:
         factory_dari_router = router.functions.factory().call()
         weth_dari_router = router.functions.WETH().call()
@@ -132,21 +153,21 @@ def main() -> int:
         print(f"{BAD} Alamat router tidak berperilaku seperti router PancakeSwap: {exc}")
         return 1
 
-    if factory_dari_router == cfg.factory_address:
+    if factory_dari_router == net.factory_address:
         print(f"{OK} router.factory() cocok dengan PANCAKE_FACTORY_ADDRESS")
     else:
         print(f"{BAD} router.factory() = {factory_dari_router}")
-        print(f"         tapi .env berisi  {cfg.factory_address}")
+        print(f"         tapi .env berisi  {net.factory_address}")
         problems += 1
 
-    if weth_dari_router == cfg.wbnb_address:
+    if weth_dari_router == net.wbnb_address:
         print(f"{OK} router.WETH() cocok dengan WBNB_ADDRESS")
     else:
         print(f"{BAD} router.WETH()   = {weth_dari_router}")
-        print(f"         tapi .env berisi  {cfg.wbnb_address}")
+        print(f"         tapi .env berisi  {net.wbnb_address}")
         problems += 1
 
-    wbnb = w3.eth.contract(address=cfg.wbnb_address, abi=ERC20_ABI)
+    wbnb = w3.eth.contract(address=net.wbnb_address, abi=ERC20_ABI)
     try:
         symbol = wbnb.functions.symbol().call()
         decimals = wbnb.functions.decimals().call()
@@ -161,8 +182,8 @@ def main() -> int:
         problems += 1
 
     # ---- 4. RPC privat ----
-    print(f"\n-- Sambungan ke RPC privat (pengirim transaksi) --\n   {cfg.rpc_private_url}")
-    w3p = Web3(Web3.HTTPProvider(cfg.rpc_private_url, request_kwargs={"timeout": 15}))
+    print(f"\n-- Sambungan ke RPC privat (pengirim transaksi) --\n   {net.rpc_private_url}")
+    w3p = Web3(Web3.HTTPProvider(net.rpc_private_url, request_kwargs={"timeout": 15}))
     try:
         started = time.perf_counter()
         chain_id_p = w3p.eth.chain_id

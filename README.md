@@ -95,6 +95,9 @@ source .venv/bin/activate
 python3 scripts/cek_jaringan.py
 ```
 
+Skrip ini sengaja bisa dijalankan walaupun `.env` belum lengkap. Cukup isi
+`RPC_READ_URL` dan `RPC_PRIVATE_URL` saja, sisanya boleh dibiarkan dulu.
+
 Skrip ini bertanya langsung ke blockchain:
 
 - `router.factory()` harus sama persis dengan `PANCAKE_FACTORY_ADDRESS`
