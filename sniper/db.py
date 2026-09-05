@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS positions (
     notes                    TEXT,
     FOREIGN KEY (call_id) REFERENCES calls (id)
 );
-CREATE INDEX IF NOT EXISTS idx_positions_status ON positions (status, dry_run);
+CREATE INDEX IF NOT EXISTS idx_positions_status ON positions (status, dry_run, principal_recovered);
 CREATE INDEX IF NOT EXISTS idx_positions_token  ON positions (token_address);
 
 -- Setiap percobaan transaksi, termasuk percobaan ulang dengan gas lebih tinggi.
@@ -261,8 +261,40 @@ class Database:
         )
 
     def count_open_positions(self, dry_run: bool) -> int:
+        """Semua posisi terbuka, termasuk yang modalnya sudah ditarik."""
         row = self.query_one(
             "SELECT COUNT(*) AS n FROM positions WHERE status = 'open' AND dry_run = ?",
+            (1 if dry_run else 0,),
+        )
+        return int(row["n"]) if row else 0
+
+    def at_risk_positions(self, dry_run: bool) -> list[sqlite3.Row]:
+        """Posisi yang modal awalnya MASIH di dalam (belum ditarik)."""
+        return self.query_all(
+            "SELECT * FROM positions WHERE status = 'open' AND dry_run = ? "
+            "AND principal_recovered = 0 ORDER BY id",
+            (1 if dry_run else 0,),
+        )
+
+    def count_at_risk_positions(self, dry_run: bool) -> int:
+        """Angka inilah yang dibandingkan dengan MAX_OPEN_POSITIONS.
+
+        Posisi yang modal awalnya sudah ditarik (principal_recovered = 1)
+        sudah bebas risiko, jadi TIDAK memakan kuota. Batasnya berarti
+        "maksimal sekian posisi yang uang modalnya masih terpasang".
+        """
+        row = self.query_one(
+            "SELECT COUNT(*) AS n FROM positions WHERE status = 'open' "
+            "AND dry_run = ? AND principal_recovered = 0",
+            (1 if dry_run else 0,),
+        )
+        return int(row["n"]) if row else 0
+
+    def count_riskfree_positions(self, dry_run: bool) -> int:
+        """Posisi terbuka yang modalnya sudah kembali. Tidak memakan kuota."""
+        row = self.query_one(
+            "SELECT COUNT(*) AS n FROM positions WHERE status = 'open' "
+            "AND dry_run = ? AND principal_recovered = 1",
             (1 if dry_run else 0,),
         )
         return int(row["n"]) if row else 0

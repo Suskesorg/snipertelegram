@@ -59,7 +59,11 @@ def main() -> int:
     db.ensure_today_row(cfg.dry_run)
     db.set_state("m1_check_ok", "true")
     print(f"  Tulis/baca uji : bot_state.m1_check_ok = {db.get_state('m1_check_ok')}")
-    print(f"  Posisi terbuka : {db.count_open_positions(cfg.dry_run)}")
+    print(f"  Posisi terbuka       : {db.count_open_positions(cfg.dry_run)}")
+    print(f"  - modal masih di dalam : {db.count_at_risk_positions(cfg.dry_run)}"
+          f"  (batasnya {cfg.max_open_positions})")
+    print(f"  - sudah bebas risiko   : {db.count_riskfree_positions(cfg.dry_run)}"
+          f"  (tidak memakan kuota)")
     print(f"  Bot dijeda     : {'ya' if db.is_paused() else 'tidak'}")
 
     # --- 3. logging + uji sensor ---
