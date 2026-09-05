@@ -50,12 +50,11 @@ def main() -> int:
     else:
         print("\n  >> PERINGATAN: DRY_RUN=false. Mode uang sungguhan. <<")
 
-    if not cfg.daily_loss_limit_enabled:
-        print("\n  >> Rem rugi harian TIDAK AKTIF (MAX_DAILY_LOSS_BNB=0).")
-        print(f"     Satu-satunya pembatas yang tersisa adalah "
-              f"MAX_OPEN_POSITIONS={cfg.max_open_positions},")
-        print(f"     yaitu maksimal {cfg.max_open_positions * cfg.buy_amount_bnb} BNB "
-              f"berisiko pada satu waktu. <<")
+    warnings = cfg.config_warnings()
+    if warnings:
+        print("\n-- Catatan risiko (sah, tapi tolong disadari) --")
+        for i, w in enumerate(warnings, 1):
+            print(f"  {i}. {w}")
 
     # --- 2. database ---
     print("\n-- Database --")

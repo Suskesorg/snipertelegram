@@ -210,6 +210,38 @@ class Config:
     def max_daily_loss_wei(self) -> int:
         return int(self.max_daily_loss_bnb * Decimal(10) ** 18)
 
+    def config_warnings(self) -> list[str]:
+        """Hal-hal yang sah tapi berisiko. Bukan error, hanya peringatan."""
+        warnings: list[str] = []
+        if not self.daily_loss_limit_enabled:
+            total = self.max_open_positions * self.buy_amount_bnb
+            warnings.append(
+                f"Rem rugi harian mati (MAX_DAILY_LOSS_BNB=0). Pembatas yang "
+                f"tersisa cuma MAX_OPEN_POSITIONS={self.max_open_positions}, "
+                f"yaitu {total} BNB berisiko pada satu waktu."
+            )
+        if self.sell_slippage_percent < 15:
+            warnings.append(
+                f"SELL_SLIPPAGE_PERCENT={self.sell_slippage_percent}% tergolong "
+                f"ketat untuk penjualan. Trailing stop menembak saat harga jatuh "
+                f"cepat, dan penjualan bisa revert. Perhatikan angka penjualan "
+                f"gagal di tahap M4."
+            )
+        if self.sell_slippage_percent < self.buy_slippage_percent:
+            warnings.append(
+                f"Slippage jual ({self.sell_slippage_percent}%) lebih ketat "
+                f"daripada slippage beli ({self.buy_slippage_percent}%). "
+                f"Biasanya kebalikannya, karena jual yang gagal lebih merugikan "
+                f"daripada beli yang gagal."
+            )
+        if self.gas_reserve_bnb < self.buy_amount_bnb:
+            warnings.append(
+                f"Cadangan gas ({self.gas_reserve_bnb} BNB) lebih kecil daripada "
+                f"satu kali pembelian ({self.buy_amount_bnb} BNB). Pastikan cukup "
+                f"untuk membayar gas semua penjualan yang mungkin terjadi."
+            )
+        return warnings
+
     @property
     def daily_loss_limit_enabled(self) -> bool:
         """MAX_DAILY_LOSS_BNB=0 berarti TANPA BATAS, bukan "berhenti di rugi 0".
