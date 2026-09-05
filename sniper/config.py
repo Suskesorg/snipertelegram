@@ -211,6 +211,15 @@ class Config:
         return int(self.max_daily_loss_bnb * Decimal(10) ** 18)
 
     @property
+    def daily_loss_limit_enabled(self) -> bool:
+        """MAX_DAILY_LOSS_BNB=0 berarti TANPA BATAS, bukan "berhenti di rugi 0".
+
+        Ini ditulis eksplisit supaya tidak ada salah tafsir: angka 0 di
+        baris itu mematikan rem harian sepenuhnya.
+        """
+        return self.max_daily_loss_bnb > 0
+
+    @property
     def max_gas_price_wei(self) -> int:
         return int(self.max_gas_price_gwei * Decimal(10) ** 9)
 
@@ -230,7 +239,9 @@ class Config:
             f"Private key             : {'ada, disembunyikan' if self.private_key else 'tidak ada'}",
             f"Beli per call           : {self.buy_amount_bnb} BNB",
             f"Maks posisi terbuka     : {self.max_open_positions}",
-            f"Batas rugi per hari     : {self.max_daily_loss_bnb} BNB",
+            f"Batas rugi per hari     : "
+            + (f"{self.max_daily_loss_bnb} BNB" if self.daily_loss_limit_enabled
+               else "TIDAK AKTIF (MAX_DAILY_LOSS_BNB=0)"),
             f"Batas gas price         : {self.max_gas_price_gwei} gwei",
             f"Slippage beli / jual    : {self.buy_slippage_percent}% / {self.sell_slippage_percent}%",
             f"Target ambil modal      : {self.take_profit_multiplier}x",
