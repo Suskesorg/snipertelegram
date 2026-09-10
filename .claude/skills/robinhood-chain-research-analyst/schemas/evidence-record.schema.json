@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "robinhood-chain-research-analyst/evidence-record.schema.json",
+  "title": "Evidence record",
+  "description": "One observation, pinned to where and when it was made. A finding may only cite evidence that exists here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "class", "method", "source_host", "network", "chain_id", "observed_at", "freshness", "result_summary"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^EV-[0-9A-Za-z_.-]+$", "description": "Stable id, e.g. EV-001."},
+    "class": {
+      "enum": ["onchain", "explorer", "protocol_api", "aggregator", "documentation", "social", "derived"],
+      "description": "onchain is a direct node read and the only class that can carry a block pin by itself. explorer is Blockscout. aggregator is CoinGecko, DeFiLlama, GeckoTerminal and similar. derived is a computation over other records, which must be listed in derived_from."
+    },
+    "method": {"type": "string", "minLength": 1, "description": "eth_call, eth_getStorageAt, eth_getLogs, GET /api/v2/..., or the document title."},
+    "source_host": {"type": "string", "minLength": 1, "pattern": "^[^/?#]+$", "description": "Bare host only. Never a full URL, which could carry a credential."},
+    "capability": {"type": "string", "description": "Which provider capability served this, e.g. current_onchain_state or historical_state."},
+    "network": {"enum": ["mainnet", "testnet"]},
+    "chain_id": {"type": "integer", "minimum": 1},
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Required for onchain and explorer evidence when evidence.require_block_pin is on.",
+      "properties": {
+        "number": {"type": "integer", "minimum": 0},
+        "hash": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}$"},
+        "timestamp": {"type": "string", "minLength": 4}
+      }
+    },
+    "observed_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"},
+    "freshness": {
+      "enum": ["block_pinned", "cached", "unknown_cache", "point_in_time"],
+      "description": "block_pinned is reproducible at that block. cached means the provider documents a cache. unknown_cache means it does not. Never label cached REST data as real time."
+    },
+    "cache_note": {"type": "string", "description": "What the provider documents about staleness, or that it documents nothing."},
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "address": {"type": "string", "pattern": "^0x[0-9a-fA-F]{40}$"},
+        "kind": {"enum": ["contract", "eoa", "token", "pool", "transaction", "block", "protocol", "account", "document", "market"]},
+        "label": {"type": "string"},
+        "transaction_hash": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}$"}
+      }
+    },
+    "request": {"type": "object", "description": "How to reproduce the observation. Redacted endpoint only."},
+    "result_summary": {"type": "string", "minLength": 1, "description": "What was actually returned, in plain words."},
+    "raw": {"description": "The raw response, redacted."},
+    "raw_ref": {"type": "string", "description": "Path to the stored raw response."},
+    "derived_from": {"type": "array", "items": {"type": "string"}, "description": "Evidence ids this record was computed from."},
+    "provider_disagreement": {"type": "array", "items": {"type": "string"}, "description": "Ids of records that disagree with this one. Keep both rather than picking a winner."}
+  }
+}

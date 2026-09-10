@@ -1,0 +1,10 @@
+{
+  "description": "Synthetic. Zero-key starter mode with every public provider answering normally.",
+  "responses": {
+    "primary_rpc": {"status": 200, "body": {"jsonrpc": "2.0", "id": 1, "result": "0x1237"}, "latency_ms": 118},
+    "blockscout": {"status": 200, "body": {"total_blocks": "1234567", "total_addresses": "89012"}, "latency_ms": 204},
+    "geckoterminal": {"status": 200, "body": {"data": [{"id": "synthetic-network", "type": "network"}]}, "latency_ms": 260},
+    "coingecko_public": {"status": 200, "body": {"gecko_says": "(V3) To the Moon!"}, "latency_ms": 190},
+    "defillama_public": {"status": 200, "body": [{"name": "Robinhood Chain", "tvl": 0}], "latency_ms": 310}
+  }
+}

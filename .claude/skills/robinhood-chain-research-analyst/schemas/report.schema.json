@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "robinhood-chain-research-analyst/report.schema.json",
+  "title": "Research report bundle",
+  "description": "The machine-checkable half of a report. The prose report is generated from this, so that every sentence has something behind it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "target", "network", "findings", "evidence"],
+  "properties": {
+    "schema_version": {"type": "string", "pattern": "^1\\."},
+    "generated_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T"},
+    "question": {"type": "string", "description": "The research question in the user's own words."},
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "kind"],
+      "properties": {
+        "input": {"type": "string", "minLength": 1, "description": "Exactly what the user supplied, before any resolution."},
+        "resolved_address": {"type": "string", "pattern": "^0x[0-9a-fA-F]{40}$"},
+        "resolution_note": {"type": "string", "description": "How the input became this address, and what else it could have meant."},
+        "kind": {"enum": ["address", "contract", "token", "pool", "transaction", "protocol", "wallet", "question"]},
+        "candidates_rejected": {"type": "array", "items": {"type": "object"}, "description": "Same-symbol or same-name candidates considered and ruled out, with addresses."}
+      }
+    },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["environment", "chain_id", "chain_id_verified"],
+      "properties": {
+        "name": {"type": "string"},
+        "environment": {"enum": ["mainnet", "testnet"]},
+        "chain_id": {"type": "integer", "minimum": 1},
+        "chain_id_verified": {"const": true, "description": "Must be true. Read eth_chainId from the endpoint actually used."},
+        "verified_via": {"type": "string"},
+        "documentation_checked": {"type": "string", "description": "Which official documentation was consulted, and when."}
+      }
+    },
+    "block_pin": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The block the report speaks as of.",
+      "properties": {
+        "number": {"type": "integer", "minimum": 0},
+        "hash": {"type": "string", "pattern": "^0x[0-9a-fA-F]{64}$"},
+        "timestamp": {"type": "string"}
+      }
+    },
+    "config_summary": {"type": "object", "description": "The settings that shaped this run, so a reader knows what was and was not asked for."},
+    "provider_health": {"type": "array", "items": {"type": "object"}},
+    "coverage_limitations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "reason"],
+        "properties": {
+          "id": {"type": "string"},
+          "scope": {"type": "string", "description": "What part of the investigation this touched."},
+          "reason": {"type": "string", "description": "The classified reason, e.g. http_429_rate_limited or archive_state_pruned."},
+          "effect": {"type": "string", "description": "What could not be established because of it."},
+          "retry_guidance": {"type": "string"}
+        }
+      }
+    },
+    "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+    "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidenceRecord"}},
+    "unknowns": {"type": "array", "items": {"type": "string"}, "description": "Questions the run did not answer, stated as questions."},
+    "budget": {"type": "object"},
+    "disclaimers": {"type": "array", "items": {"type": "string"}},
+    "next_checks": {"type": "array", "items": {"type": "string"}, "description": "What to do next, ranked, with the budget each step needs."}
+  },
+  "$defs": {
+    "evidenceRecord": {"$file": "evidence-record.schema.json"},
+    "finding": {"$file": "finding.schema.json"}
+  }
+}

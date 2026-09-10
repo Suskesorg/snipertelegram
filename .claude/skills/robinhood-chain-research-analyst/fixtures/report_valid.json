@@ -1,0 +1,297 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-03-04T11:20:00Z",
+  "question": "Is this token safe to hold, and could I sell 10k of it?",
+  "target": {
+    "input": "0x217339e01AdaBa70e8875791ff848AbF44365671",
+    "resolved_address": "0x217339e01AdaBa70e8875791ff848AbF44365671",
+    "resolution_note": "SYNTHETIC EXAMPLE. Address supplied directly, so no name resolution was needed and no same-symbol candidate had to be ruled out.",
+    "kind": "token",
+    "candidates_rejected": []
+  },
+  "network": {
+    "name": "Robinhood Chain",
+    "environment": "mainnet",
+    "chain_id": 4663,
+    "chain_id_verified": true,
+    "verified_via": "eth_chainId returned 0x1237 from the configured RPC host before any target read",
+    "documentation_checked": "official chain documentation re-read 2026-03-04 for chain id and RPC host"
+  },
+  "block_pin": {
+    "number": 4812345,
+    "hash": "0x86758c5b723c1faab0fe9533e2a44b1e1336bcb810f3244cde2bdd5c95beb862",
+    "timestamp": "2026-03-04T11:18:44Z"
+  },
+  "config_summary": {
+    "risk_posture": "conservative",
+    "default_mode": "focused",
+    "exit_sizes_usd": [1000, 10000, 100000],
+    "focus_requested": ["identity_and_source", "contract_controls", "proxy_and_upgrade_risk", "liquidity_custody", "sellability_and_exit_depth", "holder_concentration", "rwa_rights_and_redemption"]
+  },
+  "provider_health": [
+    {"probe": "primary_rpc", "capability": "current_onchain_state", "state": "available", "reason": "ok", "host": "rpc.mainnet.chain.robinhood.com"},
+    {"probe": "blockscout", "capability": "contract_discovery_and_source", "state": "reachable_but_restricted", "reason": "http_429_rate_limited", "host": "robinhoodchain.blockscout.com"},
+    {"probe": "archive_rpc", "capability": "historical_state", "state": "unavailable", "reason": "not_configured", "host": "(not configured)"}
+  ],
+  "coverage_limitations": [
+    {
+      "id": "CL-1",
+      "scope": "holder_concentration",
+      "reason": "http_429_rate_limited",
+      "effect": "The explorer stopped serving the token holder list partway through, so the top-holder distribution could not be established at all. No conclusion about concentration is drawn from the partial page that was retrieved.",
+      "retry_guidance": "Re-run the holder query after the rate-limit window, or supply an indexer with holder support."
+    },
+    {
+      "id": "CL-2",
+      "scope": "launch_and_distribution",
+      "reason": "archive_state_unavailable",
+      "effect": "No archive endpoint is configured, so balances at historical blocks could not be read and the original distribution could not be reconstructed.",
+      "retry_guidance": "Set ROBINHOOD_ARCHIVE_RPC_URL and re-run with include_historical_launch_analysis: always."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F-001",
+      "focus_area": "identity_and_source",
+      "statement": "The requested address holds contract code on Robinhood Chain mainnet and reports symbol EXMPL with 18 decimals and a total supply of 1,000,000 tokens at block 4812345.",
+      "confidence": "proven",
+      "subject_address": "0x217339e01AdaBa70e8875791ff848AbF44365671",
+      "evidence_ids": ["EV-001", "EV-002"],
+      "impact": "This is the contract the rest of the report is about; every later claim is bound to this address.",
+      "falsifier": "A different runtime bytecode hash or a different symbol read at the same block from an independent endpoint.",
+      "severity": "informational"
+    },
+    {
+      "id": "F-002",
+      "focus_area": "proxy_and_upgrade_risk",
+      "statement": "The contract is an EIP-1967 proxy. Its implementation slot points at 0x887eF1CBb15180e7d0d869EabEaa09a668CF2b7c and its admin slot at 0x8EAa5fB5bFD7814a40A2e555235A04d1ccc0926C, so the code behind this address can be replaced by the admin.",
+      "confidence": "proven",
+      "subject_address": "0x217339e01AdaBa70e8875791ff848AbF44365671",
+      "evidence_ids": ["EV-003", "EV-004"],
+      "impact": "Every behavioural claim in this report describes the implementation in place at block 4812345 and can be changed by whoever controls the admin.",
+      "falsifier": "Both EIP-1967 slots reading as zero at the same block, or an admin that is provably unable to call upgrade.",
+      "severity": "high",
+      "counterpoint": "Upgradeability is normal for a regulated issuer that must be able to patch a compliance bug. It is a control to locate, not a defect by itself."
+    },
+    {
+      "id": "F-003",
+      "focus_area": "contract_controls",
+      "statement": "Transfers can be halted for everyone by the pauser role, and individual addresses can be blocked. The contract was not paused at block 4812345.",
+      "confidence": "strongly_supported",
+      "subject_address": "0x217339e01AdaBa70e8875791ff848AbF44365671",
+      "evidence_ids": ["EV-005", "EV-006"],
+      "impact": "A holder's ability to transfer or sell is contingent on a third party not exercising a control it already has.",
+      "falsifier": "Verified source without a pause modifier on transfer, or a pauser role held by a burned address.",
+      "severity": "high"
+    },
+    {
+      "id": "F-004",
+      "focus_area": "liquidity_custody",
+      "statement": "The single DEX pool holding this token appears to be controlled by the deploying address rather than by dispersed liquidity providers.",
+      "confidence": "inferred",
+      "subject_address": "0x6E4E4C1ad3c21E71C8C873EB36c59de58C443817",
+      "evidence_ids": ["EV-007", "EV-008"],
+      "reasoning": "The pool's LP token supply is held almost entirely by one address at the pinned block, and that address is the same one that deployed the token. Neither observation alone shows intent, and the pair together is consistent with either a bootstrapped launch or a withdrawable position.",
+      "impact": "If that holder withdraws, the venue where the token trades stops existing, at their discretion and without notice.",
+      "falsifier": "LP tokens held by a timelock or burn address, or a second venue with independent depth.",
+      "severity": "high",
+      "counterpoint": "A single-provider pool is the normal starting state for any new token, and says nothing on its own about whether the provider intends to withdraw."
+    },
+    {
+      "id": "F-005",
+      "focus_area": "sellability_and_exit_depth",
+      "statement": "Whether a 100,000 USD sale can be executed was not established.",
+      "confidence": "unknown",
+      "subject_address": "0x6E4E4C1ad3c21E71C8C873EB36c59de58C443817",
+      "evidence_ids": ["EV-007"],
+      "why_unknown": "Pool reserves at the pinned block support modelling the 1,000 and 10,000 USD cases, but the 100,000 USD case exceeds the reserves observed, and no second venue was found within the request budget. The honest answer is that the depth for that size was not found, not that it does not exist.",
+      "impact": "The largest configured exit size cannot be answered from what was read.",
+      "severity": "medium"
+    },
+    {
+      "id": "F-006",
+      "focus_area": "holder_concentration",
+      "statement": "The distribution of holders could not be checked.",
+      "confidence": "unavailable",
+      "why_unknown": "The explorer's holder endpoint returned HTTP 429 on both attempts allowed by max_failed_attempts_per_check, and no indexer with holder support is configured.",
+      "coverage_limitation_ids": ["CL-1"],
+      "impact": "Concentration risk is unmeasured in this run. Treat it as an open question, not as an absence of risk.",
+      "severity": "informational"
+    },
+    {
+      "id": "F-007",
+      "focus_area": "rwa_rights_and_redemption",
+      "statement": "The issuer's published terms describe an offchain redemption process with eligibility conditions, and no onchain redemption function exists on this contract.",
+      "confidence": "inferred",
+      "subject_address": "0x217339e01AdaBa70e8875791ff848AbF44365671",
+      "evidence_ids": ["EV-009", "EV-001"],
+      "reasoning": "The verified ABI exposes no redeem, burn-for-asset, or claim entry point, so any redemption right must be exercised offchain through the issuer described in the documentation. What the token confers onchain is transferability, not a claim the chain can settle.",
+      "impact": "Holding the token is exposure to the issuer's performance of an offchain promise, which no onchain check can verify.",
+      "falsifier": "A redemption entry point in the implementation ABI, or a settlement contract that pays out against a burn.",
+      "severity": "medium",
+      "counterpoint": "Offchain redemption is how nearly every tokenized real-world asset works. The question is the quality of the issuer and the terms, not the absence of an onchain function."
+    }
+  ],
+  "evidence": [
+    {
+      "id": "EV-001",
+      "class": "onchain",
+      "method": "eth_getCode",
+      "source_host": "rpc.mainnet.chain.robinhood.com",
+      "capability": "current_onchain_state",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "block": {"number": 4812345, "hash": "0x86758c5b723c1faab0fe9533e2a44b1e1336bcb810f3244cde2bdd5c95beb862", "timestamp": "2026-03-04T11:18:44Z"},
+      "observed_at": "2026-03-04T11:19:02Z",
+      "freshness": "block_pinned",
+      "subject": {"address": "0x217339e01AdaBa70e8875791ff848AbF44365671", "kind": "contract", "label": "target token"},
+      "request": {"summary": "eth_getCode(target, 0x496e79)"},
+      "result_summary": "SYNTHETIC. Returned 1,214 bytes of runtime code; keccak of the runtime is 0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45.",
+      "raw_ref": "raw/EV-001.json"
+    },
+    {
+      "id": "EV-002",
+      "class": "onchain",
+      "method": "eth_call name() symbol() decimals() totalSupply()",
+      "source_host": "rpc.mainnet.chain.robinhood.com",
+      "capability": "current_onchain_state",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "block": {"number": 4812345, "hash": "0x86758c5b723c1faab0fe9533e2a44b1e1336bcb810f3244cde2bdd5c95beb862"},
+      "observed_at": "2026-03-04T11:19:05Z",
+      "freshness": "block_pinned",
+      "subject": {"address": "0x217339e01AdaBa70e8875791ff848AbF44365671", "kind": "token"},
+      "request": {"summary": "four static eth_call reads at the pinned block"},
+      "result_summary": "SYNTHETIC. name Example RWA Token, symbol EXMPL, decimals 18, totalSupply 1000000000000000000000000.",
+      "raw_ref": "raw/EV-002.json"
+    },
+    {
+      "id": "EV-003",
+      "class": "onchain",
+      "method": "eth_getStorageAt",
+      "source_host": "rpc.mainnet.chain.robinhood.com",
+      "capability": "current_onchain_state",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "block": {"number": 4812345, "hash": "0x86758c5b723c1faab0fe9533e2a44b1e1336bcb810f3244cde2bdd5c95beb862"},
+      "observed_at": "2026-03-04T11:19:09Z",
+      "freshness": "block_pinned",
+      "subject": {"address": "0x217339e01AdaBa70e8875791ff848AbF44365671", "kind": "contract"},
+      "request": {"summary": "eth_getStorageAt at the EIP-1967 implementation and admin slots, both recomputed from their preimages"},
+      "result_summary": "SYNTHETIC. Implementation slot holds 0x887eF1CBb15180e7d0d869EabEaa09a668CF2b7c; admin slot holds 0x8EAa5fB5bFD7814a40A2e555235A04d1ccc0926C.",
+      "raw_ref": "raw/EV-003.json"
+    },
+    {
+      "id": "EV-004",
+      "class": "explorer",
+      "method": "GET /api/v2/smart-contracts/{address}",
+      "source_host": "robinhoodchain.blockscout.com",
+      "capability": "contract_discovery_and_source",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "block": {"number": 4812345},
+      "observed_at": "2026-03-04T11:19:21Z",
+      "freshness": "block_pinned",
+      "cache_note": "Explorer indexes lag the head; the returned proxy record was compared against the storage read in EV-003 rather than trusted on its own.",
+      "subject": {"address": "0x217339e01AdaBa70e8875791ff848AbF44365671", "kind": "contract"},
+      "result_summary": "SYNTHETIC. Reported as a verified proxy whose implementation matches the address read from storage in EV-003.",
+      "raw_ref": "raw/EV-004.json"
+    },
+    {
+      "id": "EV-005",
+      "class": "onchain",
+      "method": "eth_call paused()",
+      "source_host": "rpc.mainnet.chain.robinhood.com",
+      "capability": "current_onchain_state",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "block": {"number": 4812345, "hash": "0x86758c5b723c1faab0fe9533e2a44b1e1336bcb810f3244cde2bdd5c95beb862"},
+      "observed_at": "2026-03-04T11:19:12Z",
+      "freshness": "block_pinned",
+      "subject": {"address": "0x217339e01AdaBa70e8875791ff848AbF44365671", "kind": "contract"},
+      "result_summary": "SYNTHETIC. paused() returned false, and PAUSER_ROLE resolved to a role id with one holder.",
+      "raw_ref": "raw/EV-005.json"
+    },
+    {
+      "id": "EV-006",
+      "class": "explorer",
+      "method": "verified source review",
+      "source_host": "robinhoodchain.blockscout.com",
+      "capability": "contract_discovery_and_source",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "block": {"number": 4812345},
+      "observed_at": "2026-03-04T11:19:30Z",
+      "freshness": "block_pinned",
+      "cache_note": "Source served by the explorer; the deployed runtime it reports was compared byte for byte with EV-001 before use.",
+      "subject": {"address": "0x887eF1CBb15180e7d0d869EabEaa09a668CF2b7c", "kind": "contract", "label": "implementation"},
+      "result_summary": "SYNTHETIC. transfer and transferFrom carry whenNotPaused and a blocklist check on both sender and recipient.",
+      "raw_ref": "raw/EV-006.json"
+    },
+    {
+      "id": "EV-007",
+      "class": "aggregator",
+      "method": "GET /networks/{network}/pools/{pool}",
+      "source_host": "api.geckoterminal.com",
+      "capability": "dex_pool_discovery",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "observed_at": "2026-03-04T11:19:44Z",
+      "freshness": "cached",
+      "cache_note": "Provider documents periodic refresh rather than per-block updates, so this is a recent observation, not a state read. Reserves were re-read onchain in EV-008 before being used for depth.",
+      "subject": {"address": "0x6E4E4C1ad3c21E71C8C873EB36c59de58C443817", "kind": "pool"},
+      "result_summary": "SYNTHETIC. One pool listed for this token, quoted against the chain's wrapped native asset."
+    },
+    {
+      "id": "EV-008",
+      "class": "onchain",
+      "method": "eth_call getReserves() and LP balanceOf",
+      "source_host": "rpc.mainnet.chain.robinhood.com",
+      "capability": "current_onchain_state",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "block": {"number": 4812345, "hash": "0x86758c5b723c1faab0fe9533e2a44b1e1336bcb810f3244cde2bdd5c95beb862"},
+      "observed_at": "2026-03-04T11:19:50Z",
+      "freshness": "block_pinned",
+      "subject": {"address": "0x6E4E4C1ad3c21E71C8C873EB36c59de58C443817", "kind": "pool"},
+      "result_summary": "SYNTHETIC. Reserves read directly from the pool; 99.4 percent of LP supply sits at 0xAA520E2313F4BafeC37DB38C95153A5cd55b912b, which is also the token deployer.",
+      "raw_ref": "raw/EV-008.json"
+    },
+    {
+      "id": "EV-009",
+      "class": "documentation",
+      "method": "issuer terms page",
+      "source_host": "docs.example-issuer.invalid",
+      "capability": "claimed_behaviour",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "observed_at": "2026-03-04T11:20:00Z",
+      "freshness": "point_in_time",
+      "cache_note": "A published document states intent. It is not evidence of onchain behaviour and was not used to support any onchain claim.",
+      "subject": {"kind": "document", "label": "issuer redemption terms"},
+      "result_summary": "SYNTHETIC. Describes redemption by application, subject to eligibility checks and a stated settlement window."
+    }
+  ],
+  "unknowns": [
+    "How is the pauser role held, and is it a multisig, a timelock, or a single key?",
+    "Does a second trading venue exist that was not visible to the pool discovery used here?",
+    "What is the holder distribution?"
+  ],
+  "budget": {
+    "requests_used": 24,
+    "requests_budget": 30,
+    "operations_used": 11,
+    "operations_budget": 100,
+    "checks_abandoned": ["holder_list"]
+  },
+  "disclaimers": [
+    "This is due-diligence research, not investment advice, a price forecast, a safety score, or a substitute for a full smart-contract audit.",
+    "Everything onchain here describes block 4812345 on Robinhood Chain mainnet, chain id 4663. Controls identified in this report can change the answer at any later block.",
+    "Every address, balance, and holding in this document is synthetic and was invented for testing."
+  ],
+  "next_checks": [
+    "Resolve the pauser and admin role holders to concrete addresses and classify each as EOA, multisig, or timelock (about 6 requests).",
+    "Retry the holder list after the rate-limit window, or configure an indexer with holder support (about 4 requests).",
+    "Search for a second venue before answering the 100,000 USD exit case (about 8 requests)."
+  ]
+}

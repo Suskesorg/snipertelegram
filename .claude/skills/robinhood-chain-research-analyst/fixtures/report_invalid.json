@@ -1,0 +1,121 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-03-04T11:20:00Z",
+  "question": "SYNTHETIC AND DELIBERATELY WRONG. Each entry breaks one evidence rule so the validator's messages can be tested. Do not use as a template.",
+  "target": {
+    "input": "EXMPL",
+    "resolved_address": "0x217339e01AdaBa70e8875791ff848AbF44365671",
+    "resolution_note": "Picked the first symbol match without listing candidates, which is what pons_default_selection: require_address exists to prevent.",
+    "kind": "token"
+  },
+  "network": {
+    "name": "Robinhood Chain",
+    "environment": "mainnet",
+    "chain_id": 4663,
+    "chain_id_verified": false,
+    "verified_via": "assumed from the configuration file"
+  },
+  "provider_health": [
+    {"probe": "primary_rpc", "capability": "current_onchain_state", "state": "available", "reason": "ok"},
+    {"probe": "blockscout", "capability": "contract_discovery_and_source", "state": "reachable_but_restricted", "reason": "http_429_rate_limited"}
+  ],
+  "coverage_limitations": [],
+  "findings": [
+    {
+      "id": "F-101",
+      "focus_area": "market_context",
+      "statement": "The protocol is healthy and growing, with rising TVL.",
+      "confidence": "proven",
+      "evidence_ids": ["EV-101"],
+      "impact": "none stated",
+      "falsifier": "a falling TVL chart"
+    },
+    {
+      "id": "F-102",
+      "focus_area": "contract_controls",
+      "statement": "Nobody can pause this token.",
+      "confidence": "strongly_supported",
+      "subject_address": "0xE20fe3e186fEb2855b8150e945B84605E85be01b",
+      "evidence_ids": ["EV-102", "EV-999"],
+      "impact": "holders can always transfer"
+    },
+    {
+      "id": "F-103",
+      "focus_area": "liquidity_custody",
+      "statement": "Liquidity is locked.",
+      "confidence": "inferred",
+      "evidence_ids": ["EV-103"],
+      "impact": "exit is safe",
+      "falsifier": "an unlocked position"
+    },
+    {
+      "id": "F-104",
+      "focus_area": "holder_concentration",
+      "statement": "Holder distribution looks fine.",
+      "confidence": "unknown",
+      "evidence_ids": []
+    },
+    {
+      "id": "F-105",
+      "focus_area": "fees_and_treasury",
+      "statement": "Fee routing could not be checked.",
+      "confidence": "unavailable",
+      "why_unknown": "ran out of time"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "EV-101",
+      "class": "aggregator",
+      "method": "GET /protocol/{slug}",
+      "source_host": "https://api.llama.fi/protocol/example?apikey=SECRETVALUE123",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "observed_at": "2026-03-04T11:19:44Z",
+      "freshness": "real_time",
+      "subject": {"kind": "protocol", "label": "example protocol"},
+      "result_summary": "SYNTHETIC. A TVL number from a dashboard."
+    },
+    {
+      "id": "EV-102",
+      "class": "onchain",
+      "method": "eth_call paused()",
+      "source_host": "rpc.mainnet.chain.robinhood.com",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "observed_at": "2026-03-04T11:19:12Z",
+      "freshness": "block_pinned",
+      "subject": {"address": "0x217339e01AdaBa70e8875791ff848AbF44365671", "kind": "contract"},
+      "result_summary": "SYNTHETIC. Read without recording a block, and without keeping the response."
+    },
+    {
+      "id": "EV-102",
+      "class": "onchain",
+      "method": "eth_call owner()",
+      "source_host": "rpc.mainnet.chain.robinhood.com",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "block": {"number": 4812345},
+      "observed_at": "2026-03-04T11:19:14Z",
+      "freshness": "block_pinned",
+      "subject": {"address": "0xNOTANADDRESS", "kind": "contract"},
+      "result_summary": "SYNTHETIC. Duplicate id, invalid address.",
+      "raw_ref": "raw/EV-102.json"
+    },
+    {
+      "id": "EV-103",
+      "class": "onchain",
+      "method": "eth_call balanceOf(address)",
+      "source_host": "arb1.arbitrum.io",
+      "network": "mainnet",
+      "chain_id": 42161,
+      "block": {"number": 20000000},
+      "observed_at": "2026-03-04T11:19:50Z",
+      "freshness": "block_pinned",
+      "subject": {"address": "0x6E4E4C1ad3c21E71C8C873EB36c59de58C443817", "kind": "pool"},
+      "result_summary": "SYNTHETIC. A same-address lookup on a different chain, which is not evidence here.",
+      "raw_ref": "raw/EV-103.json"
+    }
+  ],
+  "disclaimers": []
+}

@@ -1,0 +1,12 @@
+{
+  "description": "Synthetic. One provider in each state, so a report has to disclose real coverage limits.",
+  "responses": {
+    "primary_rpc": {"status": 200, "body": {"jsonrpc": "2.0", "id": 1, "result": "0x1237"}, "latency_ms": 132},
+    "archive_rpc": {"status": 401, "body_text": "unauthorized", "content_type": "text/plain", "latency_ms": 88},
+    "secondary_rpc": {"error_kind": "dns_failure", "latency_ms": 5},
+    "blockscout": {"status": 429, "body_text": "Too Many Requests", "content_type": "text/plain", "retry_after": "30", "latency_ms": 76},
+    "geckoterminal": {"status": 403, "body_text": "<html><head><title>Just a moment...</title></head><body>cf-chl</body></html>", "content_type": "text/html", "latency_ms": 145},
+    "coingecko_public": {"status": 200, "body": {"gecko_says": "(V3) To the Moon!"}, "latency_ms": 210},
+    "defillama_public": {"status": 200, "body": [{"name": "Ethereum", "tvl": 0}, {"name": "Arbitrum", "tvl": 0}], "latency_ms": 240}
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "description": "Synthetic. The RPC answers cleanly but reports Arbitrum One (42161), not Robinhood Chain. Every onchain claim from it would be about the wrong chain.",
+  "responses": {
+    "primary_rpc": {"status": 200, "body": {"jsonrpc": "2.0", "id": 1, "result": "0xa4b1"}, "latency_ms": 96},
+    "blockscout": {"status": 200, "body": {"total_blocks": "1"}, "latency_ms": 150}
+  }
+}

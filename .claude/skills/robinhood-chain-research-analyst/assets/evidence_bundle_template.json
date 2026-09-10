@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "REPLACE with ISO 8601 UTC, e.g. 2026-03-04T11:20:00Z",
+  "question": "REPLACE with the user's question in their own words",
+  "target": {
+    "input": "REPLACE with exactly what the user supplied, before resolution",
+    "resolved_address": "0x0000000000000000000000000000000000000000",
+    "resolution_note": "REPLACE with how the input became this address, and what else it could have meant",
+    "kind": "token",
+    "candidates_rejected": []
+  },
+  "network": {
+    "name": "Robinhood Chain",
+    "environment": "mainnet",
+    "chain_id": 4663,
+    "chain_id_verified": true,
+    "verified_via": "REPLACE with how eth_chainId was read and what it returned",
+    "documentation_checked": "REPLACE with what official documentation was checked, and when"
+  },
+  "block_pin": {
+    "number": 0,
+    "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "timestamp": "REPLACE with the block timestamp"
+  },
+  "config_summary": {
+    "risk_posture": "conservative",
+    "default_mode": "focused",
+    "exit_sizes_usd": [1000, 10000, 100000],
+    "focus_requested": []
+  },
+  "provider_health": [],
+  "coverage_limitations": [
+    {
+      "id": "CL-1",
+      "scope": "REPLACE with the part of the investigation this touched",
+      "reason": "REPLACE with the classified reason, e.g. http_429_rate_limited",
+      "effect": "REPLACE with what could not be established because of it",
+      "retry_guidance": "REPLACE with what would resolve it"
+    }
+  ],
+  "findings": [
+    {
+      "id": "F-001",
+      "focus_area": "identity_and_source",
+      "statement": "REPLACE with a claim specific enough to be re-checked. Prefer a number and an address over an adjective.",
+      "confidence": "proven",
+      "subject_address": "0x0000000000000000000000000000000000000000",
+      "evidence_ids": ["EV-001"],
+      "impact": "REPLACE with what this changes for a holder, in one sentence",
+      "falsifier": "REPLACE with the observation that would overturn this",
+      "severity": "informational",
+      "counterpoint": "REPLACE with the strongest argument that this matters less than it looks"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "EV-001",
+      "class": "onchain",
+      "method": "eth_getCode",
+      "source_host": "rpc.mainnet.chain.robinhood.com",
+      "capability": "current_onchain_state",
+      "network": "mainnet",
+      "chain_id": 4663,
+      "block": {
+        "number": 0,
+        "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "timestamp": "REPLACE"
+      },
+      "observed_at": "REPLACE with ISO 8601 UTC",
+      "freshness": "block_pinned",
+      "subject": {
+        "address": "0x0000000000000000000000000000000000000000",
+        "kind": "contract",
+        "label": "REPLACE"
+      },
+      "request": {"summary": "REPLACE with how to reproduce this, endpoint host only"},
+      "result_summary": "REPLACE with what was actually returned, in plain words",
+      "raw_ref": "raw/EV-001.json"
+    }
+  ],
+  "unknowns": [
+    "REPLACE with a question this run did not answer, phrased as a question"
+  ],
+  "budget": {
+    "requests_used": 0,
+    "requests_budget": 30,
+    "operations_used": 0,
+    "operations_budget": 100,
+    "checks_abandoned": []
+  },
+  "disclaimers": [
+    "This is due-diligence research, not investment advice, a price forecast, a safety score, or a substitute for a full smart-contract audit.",
+    "Onchain statements describe one block on one network. Controls identified here can change the answer at any later block."
+  ],
+  "next_checks": [
+    "REPLACE with the next check, ranked, with the request cost it needs"
+  ]
+}

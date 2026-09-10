@@ -1,0 +1,162 @@
+# Robinhood Chain research analyst - configuration
+# =============================================================================
+# Copy this file, then edit your copy:
+#
+#     cp config.example.yaml robinhood-chain.config.yaml
+#
+# The analyst looks for your file in this order, and uses the first one it
+# finds, falling back to this example if you have not made a copy yet:
+#
+#   1. the path you pass with --config
+#   2. the path in the ROBINHOOD_CHAIN_ANALYST_CONFIG environment variable
+#   3. ./robinhood-chain.config.yaml   (or .yml, or .robinhood-chain.yaml)
+#   4. ~/.config/robinhood-chain-research-analyst/config.yaml
+#
+# Check your file before relying on it:
+#
+#     python3 scripts/validate_config.py --config robinhood-chain.config.yaml
+#
+# Two rules that override everything below:
+#
+#   * WHAT YOU SAY IN A REQUEST WINS. If you ask for a deep review of one
+#     specific thing, that beats every default here. These settings only decide
+#     what happens when your request does not say.
+#   * NO SECRETS IN THIS FILE. API keys live in environment variables. This
+#     file only ever names the variable to read. That is what keeps a key out
+#     of a git commit, a screenshot, or a report.
+# =============================================================================
+
+analyst:
+  # How the report reads.
+  # style:        concise | standard | detailed
+  # risk_posture: conservative | balanced | permissive
+  #   conservative treats an unverified control as a live risk.
+  #   permissive treats the same thing as an open question.
+  # default_mode: triage | focused | deep
+  #   triage  = identity and controls only, fastest
+  #   focused = the focus list below
+  #   deep    = focus list plus historical and dependency work
+  # audience:     informed_retail | professional | engineer | compliance
+  style: concise
+  risk_posture: conservative
+  default_mode: focused
+  audience: informed_retail
+  language: en
+
+network:
+  # Which chain every claim in the report refers to. The analyst reads the
+  # chain id from the RPC and refuses to continue if it does not match.
+  # Seeded values, to be confirmed against current official documentation:
+  #   mainnet chain id 4663
+  #   testnet chain id 46630
+  name: Robinhood Chain
+  environment: mainnet
+  expected_chain_id: 4663
+  verify_chain_id_before_use: true
+  verify_documentation_before_use: true
+  # never_silently: a switch between mainnet and testnet is allowed only when
+  # the analyst says so out loud and re-verifies. 'never' refuses entirely.
+  allow_environment_switch: never_silently
+
+research:
+  # Which questions to work through, in order. Remove any you do not care
+  # about; the report will say it skipped them. See
+  # references/investigation-playbooks.md for what each one actually does.
+  focus:
+    - identity_and_source          # is this the exact thing you asked about
+    - contract_controls            # who can change what
+    - proxy_and_upgrade_risk       # can the code be replaced
+    - liquidity_custody            # who owns the liquidity
+    - sellability_and_exit_depth   # can an ordinary holder get out
+    - holder_concentration         # who holds it
+    - fees_and_treasury            # where the money goes
+    - rwa_rights_and_redemption    # what you actually own, for tokenized assets
+    - external_dependencies        # what outside this contract could break it
+  # Notional sizes to model when answering "can I actually sell".
+  exit_sizes_usd: [1000, 10000, 100000]
+  # always | never | when_triggered (young, concentrated, or you asked)
+  include_historical_launch_analysis: when_triggered
+  # Budgets for the first pass. When one is hit, the analyst stops, reports
+  # what it established, and asks before spending more.
+  max_initial_runtime_minutes: 10
+  max_initial_provider_requests: 30
+  max_initial_provider_operations: 100
+  max_failed_attempts_per_check: 2
+  # What to do when you name a target by symbol or name instead of an address.
+  #   require_address                 list the candidates with addresses, then stop
+  #   top_liquidity_with_confirmation propose the deepest pool, then confirm
+  #   ask_always                      always ask, even when there is one match
+  pons_default_selection: require_address
+  # Social reading. Without X_BEARER_TOKEN this is labelled as search-visible
+  # narrative, never as representative sentiment.
+  sentiment_window_hours: 72
+  social_sample_limit: 200
+  report_depth: standard
+  # Largest block span per log query before splitting. Public endpoints cap this.
+  log_block_range_limit: 10000
+
+evidence:
+  # These are the rules that keep the report honest. Loosening them is allowed
+  # and is recorded in the report, so a reader can see what standard was used.
+  require_block_pin: true              # onchain readings record their block
+  require_exact_address_binding: true  # claims name the address they came from
+  allow_dashboard_only_claims: false   # a TVL dashboard is not contract evidence
+  preserve_raw_evidence: true          # keep raw responses for re-checking
+  raw_evidence_dir: ./research/raw
+  min_sources_for_proven: 1
+  min_sources_for_strongly_supported: 2
+
+providers:
+  # Only variable NAMES here, never values. Set the variables in your shell:
+  #     export ROBINHOOD_RPC_URL="https://..."
+  primary_rpc_env: ROBINHOOD_RPC_URL
+  archive_rpc_env: ROBINHOOD_ARCHIVE_RPC_URL
+  secondary_rpc_env: ROBINHOOD_SECONDARY_RPC_URL
+  use_public_rpc_fallback: true
+
+  # Zero-key defaults. Confirm against official documentation before relying
+  # on them; they are a starting point, not a source of truth.
+  public_rpc_url: https://rpc.mainnet.chain.robinhood.com
+  public_rpc_url_testnet: https://rpc.testnet.chain.robinhood.com
+  blockscout_url: https://robinhoodchain.blockscout.com
+  blockscout_url_testnet: https://explorer.testnet.chain.robinhood.com
+  geckoterminal_url: https://api.geckoterminal.com/api/v2
+  # GeckoTerminal's own id for this chain. Leave empty until you have read it
+  # from their network list. An invented id quietly returns another chain.
+  geckoterminal_network_id: ""
+
+  coingecko_key_env: COINGECKO_API_KEY
+  coingecko_public_url: https://api.coingecko.com/api/v3
+  coingecko_pro_url: https://pro-api.coingecko.com/api/v3
+  defillama_key_env: DEFILLAMA_API_KEY
+  defillama_public_url: https://api.llama.fi
+
+  # Alchemy and dRPC put the credential inside the URL, and the correct host
+  # for a given chain changes. The helpers will not guess it. Read the current
+  # format in the provider's own documentation, then put it here with {key}
+  # where the credential goes. Leave empty to skip the provider entirely.
+  alchemy_key_env: ALCHEMY_API_KEY
+  alchemy_url_template: ""
+  drpc_url_env: DRPC_URL
+  drpc_key_env: DRPC_API_KEY
+  drpc_url_template: ""
+
+  x_bearer_env: X_BEARER_TOKEN
+  traditional_market_data_env: TRADITIONAL_MARKET_DATA_API_KEY
+  traditional_market_data_url: ""
+
+  request_timeout_seconds: 20
+
+  # Already have these keys under other names? Map them here instead of
+  # renaming your variables. Left side is the slot (or the default variable
+  # name), right side is the variable you actually have set.
+  #   env_aliases:
+  #     primary_rpc: MY_L2_RPC_URL
+  #     COINGECKO_API_KEY: CG_PRO_KEY
+  env_aliases: {}
+
+output:
+  write_reports_to: ./research
+  include_evidence_appendix: true
+  include_provider_health: true
+  redact_endpoints_in_reports: true

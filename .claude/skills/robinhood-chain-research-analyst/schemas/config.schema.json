@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "robinhood-chain-research-analyst/config.schema.json",
+  "title": "Robinhood Chain research analyst configuration",
+  "description": "Validates config.example.yaml and any user copy of it. Unknown keys are errors on purpose: a silently ignored typo means the analyst runs with defaults the user believes they changed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["analyst", "network", "research", "evidence", "providers"],
+  "properties": {
+    "analyst": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "style": {"enum": ["concise", "standard", "detailed"], "description": "Prose density of the report."},
+        "risk_posture": {"enum": ["conservative", "balanced", "permissive"], "description": "How aggressively to treat an unresolved control as a risk. Conservative reports an unverified control as a live risk; permissive reports it as an open question."},
+        "default_mode": {"enum": ["triage", "focused", "deep"], "description": "Default depth when the user does not say. triage is identity and controls only; deep runs every configured focus area."},
+        "audience": {"enum": ["informed_retail", "professional", "engineer", "compliance"], "description": "Vocabulary and what gets explained versus assumed."},
+        "language": {"type": "string", "minLength": 2, "maxLength": 16, "description": "BCP 47 tag for report prose, e.g. en or id."}
+      }
+    },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["environment", "expected_chain_id"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "environment": {"enum": ["mainnet", "testnet"], "description": "Which Robinhood Chain environment every claim in the report refers to."},
+        "expected_chain_id": {"type": "integer", "minimum": 1, "description": "The chain id the RPC must report before any onchain claim is made. Seeded values are 4663 mainnet and 46630 testnet; confirm against current official documentation."},
+        "verify_chain_id_before_use": {"type": "boolean", "description": "Read eth_chainId and compare before trusting any endpoint."},
+        "verify_documentation_before_use": {"type": "boolean", "description": "Re-check official docs for endpoints and chain ids rather than trusting the seeded values."},
+        "allow_environment_switch": {"enum": ["never_silently", "never"], "description": "never_silently permits a switch the analyst states out loud and re-verifies; never refuses entirely."}
+      }
+    },
+    "research": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "focus": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Focus areas to cover, in order. Each maps to a playbook in references/investigation-playbooks.md.",
+          "items": {"enum": ["identity_and_source", "contract_controls", "proxy_and_upgrade_risk", "liquidity_custody", "sellability_and_exit_depth", "holder_concentration", "fees_and_treasury", "rwa_rights_and_redemption", "external_dependencies", "launch_and_distribution", "market_context", "narrative_and_sentiment"]}
+        },
+        "exit_sizes_usd": {"type": "array", "minItems": 1, "items": {"type": "number", "minimum": 0}, "description": "Notional sizes to model when answering whether an ordinary holder can actually sell."},
+        "include_historical_launch_analysis": {"enum": ["always", "never", "when_triggered"], "description": "when_triggered means run it if the target is young, concentrated, or the user asks about the launch."},
+        "max_initial_runtime_minutes": {"type": "number", "minimum": 1, "maximum": 240},
+        "max_initial_provider_requests": {"type": "integer", "minimum": 1, "description": "Network requests before pausing to report and ask for more budget."},
+        "max_initial_provider_operations": {"type": "integer", "minimum": 1, "description": "Distinct research steps before the same pause. A paginated scan is many requests, one operation."},
+        "max_failed_attempts_per_check": {"type": "integer", "minimum": 1, "maximum": 10, "description": "Retries per individual check before recording it as a coverage limitation and moving on."},
+        "pons_default_selection": {"enum": ["require_address", "top_liquidity_with_confirmation", "ask_always"], "description": "What to do when a target is named by symbol, name, or ticker instead of an exact address. require_address never guesses: it lists candidates with addresses and stops."},
+        "sentiment_window_hours": {"type": "integer", "minimum": 1, "maximum": 8760},
+        "social_sample_limit": {"type": "integer", "minimum": 1, "maximum": 5000},
+        "report_depth": {"enum": ["headline", "standard", "full"], "description": "How much of the evidence appendix is inlined in the report."},
+        "log_block_range_limit": {"type": "integer", "minimum": 1, "description": "Largest block span for one eth_getLogs call before splitting. Public endpoints usually cap this."}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "require_block_pin": {"type": "boolean", "description": "Onchain evidence must record the block it was read at. Turning this off makes findings unreproducible."},
+        "require_exact_address_binding": {"type": "boolean", "description": "Every contract claim must carry the exact address it was read from. Turning this off allows symbol-level confusion."},
+        "allow_dashboard_only_claims": {"type": "boolean", "description": "Whether an aggregator dashboard alone may support a proven or strongly supported finding. Off by default."},
+        "preserve_raw_evidence": {"type": "boolean", "description": "Keep raw responses so a reading can be re-checked later."},
+        "raw_evidence_dir": {"type": "string", "minLength": 1},
+        "min_sources_for_proven": {"type": "integer", "minimum": 1, "maximum": 10},
+        "min_sources_for_strongly_supported": {"type": "integer", "minimum": 1, "maximum": 10}
+      }
+    },
+    "providers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary_rpc_env": {"type": "string", "description": "Name of the environment variable holding the preferred RPC URL. The value is never read from this file."},
+        "archive_rpc_env": {"type": "string"},
+        "secondary_rpc_env": {"type": "string", "description": "An independent endpoint used to corroborate a surprising reading."},
+        "use_public_rpc_fallback": {"type": "boolean"},
+        "public_rpc_url": {"type": "string", "pattern": "^https?://"},
+        "public_rpc_url_testnet": {"type": "string", "pattern": "^https?://"},
+        "blockscout_url": {"type": "string", "pattern": "^https?://"},
+        "blockscout_url_testnet": {"type": "string", "pattern": "^https?://"},
+        "geckoterminal_url": {"type": "string", "pattern": "^https?://"},
+        "geckoterminal_network_id": {"type": "string", "description": "GeckoTerminal's own id for this chain. Leave empty until confirmed from their network list; an invented id silently returns another chain's pools."},
+        "coingecko_key_env": {"type": "string"},
+        "coingecko_public_url": {"type": "string", "pattern": "^https?://"},
+        "coingecko_pro_url": {"type": "string", "pattern": "^https?://"},
+        "defillama_key_env": {"type": "string"},
+        "defillama_public_url": {"type": "string", "pattern": "^https?://"},
+        "alchemy_key_env": {"type": "string"},
+        "alchemy_url_template": {"type": "string", "description": "Endpoint template with {key} where the credential goes. Leave empty until the current format is confirmed in Alchemy's own documentation; the helpers refuse to guess it."},
+        "drpc_url_env": {"type": "string"},
+        "drpc_key_env": {"type": "string"},
+        "drpc_url_template": {"type": "string", "description": "Same rule as Alchemy: confirm the current format from dRPC's documentation before filling this in."},
+        "x_bearer_env": {"type": "string"},
+        "traditional_market_data_env": {"type": "string"},
+        "traditional_market_data_url": {"type": "string"},
+        "request_timeout_seconds": {"type": "number", "minimum": 1, "maximum": 300},
+        "env_aliases": {
+          "type": "object",
+          "description": "Map a logical slot, or a default variable name, to whatever variable you already have set. Example: primary_rpc: MY_L2_RPC.",
+          "patternProperties": {"^[A-Za-z_][A-Za-z0-9_]*$": {"type": "string", "minLength": 1}},
+          "additionalProperties": false
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "write_reports_to": {"type": "string", "minLength": 1},
+        "include_evidence_appendix": {"type": "boolean"},
+        "include_provider_health": {"type": "boolean"},
+        "redact_endpoints_in_reports": {"type": "boolean"}
+      }
+    },
+    "x_custom": {"type": "object", "description": "Free-form space for your own keys. Never validated, never read by the helpers."}
+  }
+}

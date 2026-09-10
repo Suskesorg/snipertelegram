@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "robinhood-chain-research-analyst/finding.schema.json",
+  "title": "Finding",
+  "description": "One claim, at a stated confidence, bound to the evidence that earns it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "statement", "confidence"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^F-[0-9A-Za-z_.-]+$"},
+    "focus_area": {"enum": ["identity_and_source", "contract_controls", "proxy_and_upgrade_risk", "liquidity_custody", "sellability_and_exit_depth", "holder_concentration", "fees_and_treasury", "rwa_rights_and_redemption", "external_dependencies", "launch_and_distribution", "market_context", "narrative_and_sentiment"]},
+    "statement": {"type": "string", "minLength": 1, "description": "The claim, written so that it is checkable. Prefer a number and an address over an adjective."},
+    "confidence": {
+      "enum": ["proven", "strongly_supported", "inferred", "unknown", "unavailable"],
+      "description": "proven: read directly from chain state at a pinned block. strongly_supported: multiple independent sources agree, at least one of them onchain. inferred: reasoned from evidence, not read directly. unknown: not established. unavailable: could not be checked because of a coverage limitation."
+    },
+    "subject_address": {"type": "string", "pattern": "^0x[0-9a-fA-F]{40}$"},
+    "evidence_ids": {"type": "array", "items": {"type": "string", "pattern": "^EV-"}, "uniqueItems": true},
+    "impact": {"type": "string", "description": "What this changes for a holder, in one sentence."},
+    "falsifier": {"type": "string", "description": "The observation that would overturn this claim. Required above 'unknown'."},
+    "reasoning": {"type": "string", "description": "Required for inferred findings: the step from evidence to claim."},
+    "why_unknown": {"type": "string", "description": "Required for unknown and unavailable: what was attempted and what stopped it."},
+    "coverage_limitation_ids": {"type": "array", "items": {"type": "string"}},
+    "severity": {"enum": ["informational", "low", "medium", "high", "critical"], "description": "Severity of the risk this finding describes, not a score for the asset."},
+    "counterpoint": {"type": "string", "description": "The strongest argument against this finding's importance. Included so a reader sees both sides."}
+  }
+}
