@@ -18,3 +18,7 @@ venv/
 env/
 *.egg-info/
 .pytest_cache/
+
+# Node
+node_modules/
+probe-output.txt
